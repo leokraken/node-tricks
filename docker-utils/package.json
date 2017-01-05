@@ -1,0 +1,19 @@
+{
+  "name": "dockerapi",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "node_modules/mocha/bin/mocha test/test.js",
+    "build": "docker build -t dockerapi .",
+    "test-docker": "npm run build && docker run -rm dockerapi npm t || echo test fail",
+    "start": "NODE_ENV=prod node app",
+    "start-docker": "npm run build && docker run -rm dockerapi npm run start"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.14.0",
+    "mocha": "^3.2.0"
+  }
+}
