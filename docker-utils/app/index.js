@@ -1,9 +1,21 @@
 'use strict';
 
 const express = require('express');
+const bodyParser = require('body-parser');
 const Models = require('./models');
 
 const app = express();
+
+app.use(bodyParser.json());
+
+
+app.post('/users', (req, res)=>{
+  Models.User.create(req.body)
+  .then(data=>{
+        res.send(data)
+      })
+  .catch(err=>res.status(500).send(err))
+});
 
 app.get('/users/:id/canceled', function(req, res){
   Models.User.findOne({
@@ -12,6 +24,10 @@ app.get('/users/:id/canceled', function(req, res){
     },
     include: [{
       model: Models.Appointment,
+      through:{
+        // ignores through model
+        attributes: []
+      },
       as: 'canceled'
     }]
   }).then(u=> {

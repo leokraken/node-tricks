@@ -7,7 +7,19 @@ const sequelize = new Sequelize(connectionStr);
 
 var User = sequelize.define('user', {
     id: { type: Sequelize.INTEGER, primaryKey: true},
-    name: Sequelize.STRING
+    name: {
+        type: Sequelize.STRING,
+        allowNull: false,
+        validate:{
+            notEmpty: true,
+            notAdmin: (value)=>{
+                console.log(value);
+                if(value==='admin'){
+                    throw new Error('Can not be admin');
+                }
+            }
+        }
+    }
 },{
     timestamps: false
 });
@@ -42,7 +54,7 @@ Appointment.belongsToMany(User, {as: 'canceled', through: UserAppointmentCancele
 User.belongsToMany(Appointment, {as: 'canceled', through: UserAppointmentCanceled, foreignKey:'userid'});
 
 
-sequelize.sync().then(data=>{
+sequelize.sync({force:true}).then(data=>{
     //console.log(err);
 });
 
