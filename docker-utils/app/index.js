@@ -1,24 +1,26 @@
-//console.log('hello world');
-'use strict'
+'use strict';
 
-var express = require('express');
-//var controller = require('./controller');
+const express = require('express');
+const Models = require('./models');
 
+const app = express();
 
-var app = express();
+app.get('/users/:id/canceled', function(req, res){
+  Models.User.findOne({
+    where:{
+      id: req.params.id
+    },
+    include: [{
+      model: Models.Appointment,
+      as: 'canceled'
+    }]
+  }).then(u=> {
+    // Handle null result
+    res.send(u)
+  })
+  .catch(err=> res.status(500).send())
 
-function crash(cb){
-  var a;
-  console.log(a.asdd.sd);
-}
-
-app.get('/error', function(req, res){
-  process.exit(1);
-  var a= null;
-  //controller.a();
-  //throw new Error('Sync error');
-  console.log(req.params.asd.ks);
-})
+});
 
 app.get('/', function (req, res) {
   res.send('Hello World!');
