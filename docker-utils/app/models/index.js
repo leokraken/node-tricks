@@ -1,3 +1,5 @@
+'use strict';
+
 const Sequelize = require('sequelize');
 
 const connectionStr = 'postgres://postgres:postgres@localhost:5432/postgres';
@@ -6,7 +8,7 @@ const sequelize = new Sequelize(connectionStr);
 
 
 var User = sequelize.define('user', {
-    id: { type: Sequelize.INTEGER, primaryKey: true},
+    id: { type: Sequelize.INTEGER, primaryKey: true, autoIncrement:true},
     name: {
         type: Sequelize.STRING,
         allowNull: false,
@@ -54,8 +56,15 @@ Appointment.belongsToMany(User, {as: 'canceled', through: UserAppointmentCancele
 User.belongsToMany(Appointment, {as: 'canceled', through: UserAppointmentCanceled, foreignKey:'userid'});
 
 
-sequelize.sync({force:true}).then(data=>{
-    //console.log(err);
+
+function initDatabase(){
+    for(let i=0; i<10; i++){
+        User.create({name:'leo'}).then(res=>console.log);
+    }
+}
+
+sequelize.sync({force:false}).then(data=>{
+    //initDatabase();
 });
 
 module.exports ={
