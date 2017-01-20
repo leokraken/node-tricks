@@ -7,7 +7,7 @@ const jwt = require('jsonwebtoken');
 
 // custom imports
 const examples = require('./controllers/example-controller');
-const Models = require('./models');
+const Models = require('./models/index');
 const context = require('./utils/cls');
 
 var session = context.createNamespace();
