@@ -18,89 +18,84 @@ app.use(bodyParser.json());
 
 
 app.use((req, res, next)=> {
-    session.bindEmitter(req);
-    session.bindEmitter(res);
+  session.bindEmitter(req);
+  session.bindEmitter(res);
 
-    session.run(function () {
-        let token = req.headers.authorization;
-        // token fun
-        let claims = {
-            test: 'admin',
-            roles: ['read', 'write'],
-            token: token
-        };
-        context.set('auth', claims);
-        /* Continue executing.  All under our 'mainSession' context */
-        next();
-    });
+  session.run(function () {
+    let token = req.headers.authorization;
+    // token fun
+    let claims = {
+      test: 'admin',
+      roles: ['read', 'write'],
+      token: token
+    };
+    context.set('auth', claims);
+    next();
+  });
 });
 
 app.post('/users', (req, res)=> {
-    Models.User.create(req.body)
-        .then(data=> {
-            res.send(data);
-        })
-        .catch(err=>res.status(500).send(err));
+  Models.User.create(req.body)
+    .then(data=> res.send(data));
 });
 
 app.get('/users', (req, res)=> {
-    Models.User.findAll()
-        .then(data=> {
-            res.send(data);
-        })
-        .catch(err=>res.status(500).send(err));
+  Models.User.findAll()
+    .then(users=>res.send(users));
 });
 
-app.get('/generators', (req, res)=> {
-    co(examples.generatorFlow)
-        .then(data=> res.send(data));
+app.get('/users/:id', (req, res)=> {
+  Models.User.findById(req.params.id)
+    .then(user=> {
+      if (user) {
+        res.send(user);
+      } else {
+        res.status(404).send();
+      }
+    });
 });
 
-app.get('/users/:id/canceled', function (req, res) {
-    Models.User.findOne({
-        where: {
-            id: req.params.id
-        },
-        include: [{
-            model: Models.Appointment,
-            through: {
-                // ignores through model
-                attributes: []
-            },
-            as: 'canceled'
-        }]
-    }).then(u=> {
-        // Handle null result
-        res.send(u);
-    }).catch(err=> res.status(500).send());
-
+app.patch('/users/:id', (req, res)=> {
+  Models.User.update(req.params.id, req.body)
+    .then(user=>res.send(user));
 });
+
+app.delete('/users/:id', (req, res)=> {
+  Models.User.deleteById(req.params.id)
+    .then(user=>res.send(user));
+});
+
 
 app.get('/ping', function (req, res) {
-    console.log(context.get('auth'));
-    res.send('pong!');
+  console.log(context.get('auth'));
+  res.send('pong!');
+});
+
+app.get('/users/:id/appointments', function (req, res) {
+  Models.User.findUserAppointments(req.params.id)
+    .then(data=> res.send(data));
 });
 
 
 app.get('/token', function (req, res) {
-    let token = jwt.sign({
-        data: 'foobar'
-    }, 'secret', {expiresIn: 0});
-    res.send(token);
+  let token = jwt.sign({
+    data: 'foobar'
+  }, 'secret', {expiresIn: 0});
+  res.send(token);
 });
 
 
 app.get('/token/verify', function (req, res) {
-    let token = req.headers.authorization;
-    jwt.verify(token, 'secret', {ignoreExpiration: false}, (err, claims)=> {
-        if (!err) {
-            res.send(claims);
-        } else {
-            res.status(401).send(err);
-        }
-    });
+  let token = req.headers.authorization;
+  jwt.verify(token, 'secret', {ignoreExpiration: false}, (err, claims)=> {
+    if (!err) {
+      res.send(claims);
+    } else {
+      res.status(401).send(err);
+    }
+  });
 });
 
 app.listen(3000, function () {
-    console.log('Example app listening on port 3000!');
+  console.log('Example app listening on port 3000!');
 });

@@ -20,3 +20,7 @@ GROUP_CONCAT(
 )
 FROM appointments a LEFT  JOIN users u ON (u.id= a.userid)
 GROUP BY  a.id;
+
+
+create table users(id INTEGER PRIMARY KEY, name varchar);
+create table appointments(id INTEGER, user_id INTEGER, description varchar);
