@@ -96,6 +96,34 @@ app.get('/token/verify', function (req, res) {
   });
 });
 
-app.listen(3000, function () {
+
+app.post('/messages/:to', (req, res)=>{
+  io.sockets.in(req.params.to).emit('news', {message: req.body.message});
+  res.send();
+});
+/**
+ * Websockets
+ */
+
+var server = require('http').createServer(app);
+var io = require('socket.io')(server);
+
+io.on('connection', function (socket) {
+  console.log(socket.id)
+  //socket.join('test');
+
+  //When connect socket is connected to socket.id room
+  io.sockets.in(socket.id).emit('news', {ok:'single'});
+  // Emits to room
+  //io.in('test').emit('news', {ok: true});
+
+  //single response on connect
+  socket.on('disconnect', function (data) {
+    console.log(data);
+  });
+});
+
+
+server.listen(3000, function () {
   console.log('Example app listening on port 3000!');
 });
