@@ -4,7 +4,7 @@ const co = require('co');
 const _ = require('lodash');
 const knex = require('knex')({
   client: 'pg',
-  //debug: true,
+  debug: true,
   connection: {
     host: '127.0.0.1',
     user: 'postgres',
@@ -13,6 +13,34 @@ const knex = require('knex')({
   },
   pool: {min: 0, max: 10}
 });
+
+// Using bookshelf
+var bookshelf = require('bookshelf')(knex);
+
+var User = bookshelf.Model.extend({
+  tableName: 'users',
+  appointments: function () {
+    return this.hasMany(Appointments);
+  },
+  canceled: function () {
+    return this.hasMany(CanceledAppointments);
+  }
+});
+
+var Appointments = bookshelf.Model.extend({
+  tableName: 'appointments',
+  user: function () {
+    return this.belongsTo(User);
+  }
+});
+
+var CanceledAppointments = bookshelf.Model.extend({
+  tableName: 'canceled_appointments',
+  user: function () {
+    return this.belongsTo(User);
+  }
+});
+
 
 /**
  * Create schema
@@ -26,13 +54,13 @@ schema.createTableIfNotExists('users', table => {
 
 schema.createTableIfNotExists('appointments', table => {
   table.increments('id');
-  table.integer('user_id');
+  table.integer('user_id').references('users.id');
   table.string('description');
 });
 
 schema.createTableIfNotExists('canceled_appointments', table => {
   table.increments('id');
-  table.integer('user_id');
+  table.integer('user_id').references('users.id');
   table.string('description');
 });
 
@@ -137,23 +165,24 @@ function findAppointmentsByUserId(id) {
  * @param id
  * @returns {*}
  */
-var findUserAppointments2 = co.wrap(function * (id) {
+var findUserAppointments1 = co.wrap(function * (id) {
   let time = new Date();
-  let appointments = yield {
+  let q = yield {
+    user: findById(id),
     canceled: findCanceledAppointmentsByUserId(id),
     appointments: findAppointmentsByUserId(id)
   };
 
   let final = new Date();
   console.log(time, final, final - time);
-  return appointments;
+  return _.assign(q.users, _.omit(q, ['user']));
 });
 
 /**
  * Not simple but make one query to database
  * Complex SQL Query using aggregated functions exclusive by postgresql
  */
-var findUserAppointments = co.wrap(function * (id) {
+var findUserAppointments2 = co.wrap(function * (id) {
   let time = new Date();
 
   let appointments = yield knex
@@ -162,7 +191,7 @@ var findUserAppointments = co.wrap(function * (id) {
       'users.*',
       knex.raw(`COALESCE(json_agg(appointments.*) FILTER (where appointments.id IS NOT NULL), '[]') as appointments`),
       knex.raw(`COALESCE(json_agg(canceled_appointments.*) FILTER (where canceled_appointments.id IS NOT NULL), '[]') as canceled`)]
-    )
+  )
     .where({
       'users.id': id
     })
@@ -170,6 +199,19 @@ var findUserAppointments = co.wrap(function * (id) {
     .leftJoin('appointments', {'appointments.user_id': 'users.id'})
     .leftJoin('canceled_appointments', {'canceled_appointments.user_id': 'users.id'})
     .groupBy('users.id');
+  let final = new Date();
+  console.log(time, final, final - time);
+  return appointments;
+});
+
+/** 3
+ * To simple, but the approach its the same of first example, calling 3 queries
+ *
+ */
+var findUserAppointments3 = co.wrap(function * (id) {
+  let time = new Date();
+
+  let appointments = yield User.where({id: id}).fetch({withRelated: ['appointments', 'canceled']});
   let final = new Date();
   console.log(time, final, final - time);
   return appointments;
@@ -183,6 +225,6 @@ module.exports = {
     create: create,
     update: update,
     deleteById: deleteById,
-    findUserAppointments: findUserAppointments
+    findUserAppointments: findUserAppointments3
   }
 };
