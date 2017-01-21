@@ -4,7 +4,7 @@ const co = require('co');
 const _ = require('lodash');
 const knex = require('knex')({
   client: 'pg',
-  debug: true,
+  //debug: true,
   connection: {
     host: '127.0.0.1',
     user: 'postgres',
@@ -112,7 +112,7 @@ function update(id, user) {
  * @param id
  * @returns {*|void}
  */
-function findCanceledAppointmentsByUserId (id){
+function findCanceledAppointmentsByUserId(id) {
   return knex('canceled_appointments')
     .where({user_id: id})
     .select();
@@ -123,7 +123,7 @@ function findCanceledAppointmentsByUserId (id){
  * @param id
  * @returns {*|void}
  */
-function findAppointmentsByUserId (id){
+function findAppointmentsByUserId(id) {
   return knex('appointments')
     .where({user_id: id})
     .select();
@@ -131,15 +131,47 @@ function findAppointmentsByUserId (id){
 
 /**
  * Returns appointments from user id
+ *
+ * Notes: Simplicity, query parallel execution
+ * cons: to query calls
  * @param id
  * @returns {*}
  */
-var findUserAppointments = co.wrap(function * (id) {
+var findUserAppointments2 = co.wrap(function * (id) {
+  let time = new Date();
   let appointments = yield {
     canceled: findCanceledAppointmentsByUserId(id),
     appointments: findAppointmentsByUserId(id)
   };
 
+  let final = new Date();
+  console.log(time, final, final - time);
+  return appointments;
+});
+
+/**
+ * Not simple but make one query to database
+ * Complex SQL Query using aggregated functions exclusive by postgresql
+ */
+var findUserAppointments = co.wrap(function * (id) {
+  let time = new Date();
+
+  let appointments = yield knex
+    .first()
+    .select([
+      'users.*',
+      knex.raw(`COALESCE(json_agg(appointments.*) FILTER (where appointments.id IS NOT NULL), '[]') as appointments`),
+      knex.raw(`COALESCE(json_agg(canceled_appointments.*) FILTER (where canceled_appointments.id IS NOT NULL), '[]') as canceled`)]
+    )
+    .where({
+      'users.id': id
+    })
+    .from('users')
+    .leftJoin('appointments', {'appointments.user_id': 'users.id'})
+    .leftJoin('canceled_appointments', {'canceled_appointments.user_id': 'users.id'})
+    .groupBy('users.id');
+  let final = new Date();
+  console.log(time, final, final - time);
   return appointments;
 });
 
