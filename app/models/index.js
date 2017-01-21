@@ -20,17 +20,18 @@ var bookshelf = require('bookshelf')(knex);
 var User = bookshelf.Model.extend({
   tableName: 'users',
   appointments: function () {
-    return this.hasMany(Appointments);
+    return this.belongsToMany(Appointments).through(ScheduledAppointments, 'user_id', 'appointment_id')
   },
+  /*
   canceled: function () {
-    return this.hasMany(CanceledAppointments);
-  }
+    return this.belongsToMany(Appointments).through(CanceledAppointments);
+  }*/
 });
 
 var Appointments = bookshelf.Model.extend({
   tableName: 'appointments',
-  user: function () {
-    return this.belongsTo(User);
+  users: function () {
+    return this.belongsToMany(User) //.through(ScheduledAppointments);
   }
 });
 
@@ -41,6 +42,16 @@ var CanceledAppointments = bookshelf.Model.extend({
   }
 });
 
+var ScheduledAppointments = bookshelf.Model.extend({
+  //idAttribute: 'appointment_id',
+  tableName: 'scheduled_appointments',
+  user: function () {
+    return this.belongsTo(User);
+  },
+  appointment: function () {
+    return this.belongsTo(Appointments);
+  }
+});
 
 /**
  * Create schema
@@ -48,18 +59,24 @@ var CanceledAppointments = bookshelf.Model.extend({
 var schema = knex.schema.withSchema('public');
 
 schema.createTableIfNotExists('users', table => {
-  table.increments('id');
+  table.increments('id').primary();
   table.string('name');
 });
 
 schema.createTableIfNotExists('appointments', table => {
-  table.increments('id');
-  table.integer('user_id').references('users.id');
+  table.increments('id').primary();
   table.string('description');
 });
 
 schema.createTableIfNotExists('canceled_appointments', table => {
-  table.increments('id');
+  table.integer('appointment_id').references('appointments.id');
+  table.integer('user_id').references('users.id');
+  table.string('description');
+});
+
+schema.createTableIfNotExists('scheduled_appointments', table => {
+  table.uuid('id');
+  table.integer('appointment_id').references('appointments.id');
   table.integer('user_id').references('users.id');
   table.string('description');
 });
@@ -205,16 +222,17 @@ var findUserAppointments2 = co.wrap(function * (id) {
 });
 
 /** 3
- * To simple, but the approach its the same of first example, calling 3 queries
+ * Too simple (one line), but the approach its the same of first example, calling 3 queries
  *
  */
 var findUserAppointments3 = co.wrap(function * (id) {
-  let time = new Date();
-
-  let appointments = yield User.where({id: id}).fetch({withRelated: ['appointments', 'canceled']});
-  let final = new Date();
-  console.log(time, final, final - time);
+  let appointments = yield User.forge({id: id}).fetch({withRelated: ['appointments']});
   return appointments;
+});
+
+var findAppointmentUsers = co.wrap(function * (id) {
+  let users = yield ScheduledAppointments.forge({user_id: 2, appointment_id:1}).fetch({withRelated: ['user','appointment']});
+  return users;
 });
 
 

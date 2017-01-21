@@ -73,7 +73,7 @@ app.get('/ping', function (req, res) {
 
 app.get('/users/:id/appointments', function (req, res) {
   Models.User.findUserAppointments(req.params.id)
-    .then(data=> res.send(data));
+    .then(data=> res.send(data.toJSON({omitPivot: true})));
 });
 
 
