@@ -7,7 +7,7 @@ const jwt = require('jsonwebtoken');
 
 // custom imports
 const examples = require('./controllers/example-controller');
-const Models = require('./models/index');
+//const Models = require('./models/index');
 const context = require('./utils/cls');
 
 var session = context.createNamespace();
@@ -22,15 +22,16 @@ app.use((req, res, next)=> {
   session.bindEmitter(res);
 
   session.run(function () {
-    let token = req.headers.authorization;
-    // token fun
-    let claims = {
-      test: 'admin',
-      roles: ['read', 'write'],
-      token: token
-    };
-    context.set('auth', claims);
-    next();
+/*
+     let token = req.headers.authorization;
+     // token fun
+     let claims = {
+     test: 'admin',
+     roles: ['read', 'write'],
+     token: token
+     };
+     context.set('auth', claims); */
+     next();
   });
 });
 
@@ -60,6 +61,12 @@ app.patch('/users/:id', (req, res)=> {
     .then(user=>res.send(user));
 });
 
+app.get('/mongo/users/:id', (req, res)=> {
+  Models.User.findByIdMongo(req.params.id, function (err, result) {
+    res.send(result);
+  });
+});
+
 app.delete('/users/:id', (req, res)=> {
   Models.User.deleteById(req.params.id)
     .then(user=>res.send(user));
@@ -67,7 +74,6 @@ app.delete('/users/:id', (req, res)=> {
 
 
 app.get('/ping', function (req, res) {
-  console.log(context.get('auth'));
   res.send('pong!');
 });
 
@@ -96,15 +102,38 @@ app.get('/token/verify', function (req, res) {
   });
 });
 
+app.get('/items/:id', function (req, res) {
+  res.send({id:1, name:'leo'});
+});
 
-app.post('/messages/:to', (req, res)=>{
+
+app.post('/messages/:to', (req, res)=> {
   io.sockets.in(req.params.to).emit('news', {message: req.body.message});
   res.send();
 });
+
+app.get('/especialidades', function (err, res) {
+  var async = require('async')
+  process.namespaces.myapp.set('key', {a: 'asdsadasd'});
+
+  async.auto({
+    search: examples.apiRequest,
+    leo:  ['search', function (res, cb) {
+      console.log(process.namespaces.myapp.get('key'))
+      cb(null);
+    }]
+  }, function (err, results) {
+    console.log(process.namespaces.myapp.get('key'))
+
+    res.send(results)
+  });
+});
+
+
 /**
  * Websockets
  */
-
+/*
 var server = require('http').createServer(app);
 var io = require('socket.io')(server);
 
@@ -113,7 +142,7 @@ io.on('connection', function (socket) {
   //socket.join('test');
 
   //When connect socket is connected to socket.id room
-  io.sockets.in(socket.id).emit('news', {ok:'single'});
+  io.sockets.in(socket.id).emit('news', {ok: 'single'});
   // Emits to room
   //io.in('test').emit('news', {ok: true});
 
@@ -121,9 +150,40 @@ io.on('connection', function (socket) {
   socket.on('disconnect', function (data) {
     console.log(data);
   });
-});
+}); */
 
 
-server.listen(3000, function () {
-  console.log('Example app listening on port 3000!');
+const cluster = require('cluster');
+const numCPUs = require('os').cpus().length;
+app.listen(3000, ()=> {
+  console.log('running...')
 });
+/*
+if (cluster.isMaster) {
+  console.log(`Master ${process.pid} is running`);
+
+  // Fork workers.
+  for (let i = 0; i < numCPUs / 2; i++) {
+    cluster.fork();
+  }
+
+  cluster.on('exit', (worker, code, signal) => {
+    console.log(`worker ${worker.process.pid} died`);
+  });
+} else {
+  // Workers can share any TCP connection
+  // In this case it is an HTTP server
+  app.listen(3000, ()=> {
+    console.log('running...')
+  });
+
+  console.log(`Worker ${process.pid} started`);
+}
+*/
+
+/*
+ server.listen(3000, function () {
+ console.log('Example app listening on port 3000!');
+ });
+
+ */

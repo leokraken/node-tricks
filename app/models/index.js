@@ -4,12 +4,24 @@ const co = require('co');
 const _ = require('lodash');
 const knex = require('knex')({
   client: 'pg',
-  debug: true,
+  //debug: true,
   connection: {
     host: '127.0.0.1',
     user: 'postgres',
     password: 'postgres',
     database: 'postgres'
+  },
+  pool: {min: 0, max: 13}
+});
+
+const mysql = require('knex')({
+  client: 'mysql',
+  //debug: true,
+  connection: {
+    host: '127.0.0.1',
+    user: 'root',
+    //password: 'root',
+    database: 'mysql'
   },
   pool: {min: 0, max: 10}
 });
@@ -23,9 +35,9 @@ var User = bookshelf.Model.extend({
     return this.belongsToMany(Appointments).through(ScheduledAppointments, 'user_id', 'appointment_id')
   },
   /*
-  canceled: function () {
-    return this.belongsToMany(Appointments).through(CanceledAppointments);
-  }*/
+   canceled: function () {
+   return this.belongsToMany(Appointments).through(CanceledAppointments);
+   }*/
 });
 
 var Appointments = bookshelf.Model.extend({
@@ -57,6 +69,8 @@ var ScheduledAppointments = bookshelf.Model.extend({
  * Create schema
  */
 var schema = knex.schema.withSchema('public');
+//var schema = mysql.schema.withSchema('mysql');
+
 
 schema.createTableIfNotExists('users', table => {
   table.increments('id').primary();
@@ -231,10 +245,34 @@ var findUserAppointments3 = co.wrap(function * (id) {
 });
 
 var findAppointmentUsers = co.wrap(function * (id) {
-  let users = yield ScheduledAppointments.forge({user_id: 2, appointment_id:1}).fetch({withRelated: ['user','appointment']});
+  let users = yield ScheduledAppointments.forge({
+    user_id: 2,
+    appointment_id: 1
+  }).fetch({withRelated: ['user', 'appointment']});
   return users;
 });
 
+
+/**
+ * Mongo
+ */
+var MongoClient = require('mongodb').MongoClient,
+  test = require('assert');
+// Connection url
+var url = 'mongodb://localhost:27017/test';
+// Connect using MongoClient
+var mongoDB;
+MongoClient.connect(url, function (err, db) {
+  console.log(err, db)
+  mongoDB = db;
+});
+
+
+function findByIdMongo(id, cb) {
+  mongoDB.collection('test', function (err, collection) {
+    collection.findOne(cb);
+  });
+}
 
 module.exports = {
   User: {
@@ -243,6 +281,7 @@ module.exports = {
     create: create,
     update: update,
     deleteById: deleteById,
-    findUserAppointments: findUserAppointments3
+    findUserAppointments: findUserAppointments3,
+    findByIdMongo: findByIdMongo
   }
 };

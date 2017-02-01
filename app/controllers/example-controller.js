@@ -1,7 +1,8 @@
 'use strict';
 
-const Models = require('../models/index');
+//const Models = require('../models/index');
 const co = require('co');
+const request = require('request');
 
 function authentication(req, res, next) {
 
@@ -49,7 +50,17 @@ function * generatorFlow() {
   return users;
 }
 
+
+function apiRequest(cb){
+  request({
+    url: 'http://api.sarem.uy/api/especialidades'
+  }, function (err, res, body) {
+    cb(null, body);
+  });
+}
+
 module.exports = {
   auth: authentication,
-  generatorFlow: generatorFlow
+  generatorFlow: generatorFlow,
+  apiRequest: apiRequest
 };

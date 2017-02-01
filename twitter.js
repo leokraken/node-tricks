@@ -1,3 +1,5 @@
+'use strict';
+
 var TwitterStream = require('twitter-stream-api'),
   fs = require('fs');
 
@@ -13,4 +15,11 @@ Twitter.stream('statuses/filter', {
   track: 'javascript'
 });
 
-Twitter.pipe(fs.createWriteStream('tweets.json'));
+Twitter.on('data', res => {
+  let tweet = JSON.parse(res.toString('utf8'));
+  console.log(tweet);
+});
+
+
+// Save to file
+//Twitter.pipe(fs.createWriteStream('tweets.json'));
