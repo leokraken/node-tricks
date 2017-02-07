@@ -19,6 +19,7 @@
     "continuation-local-storage": "^3.2.0",
     "express": "^4.14.0",
     "jsonwebtoken": "^7.2.1",
+    "keycloak-connect": "^2.5.1",
     "knex": "^0.12.6",
     "lodash": "^4.17.4",
     "mocha": "^3.2.0",

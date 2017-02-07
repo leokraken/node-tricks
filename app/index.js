@@ -4,6 +4,7 @@ const co = require('co');
 const express = require('express');
 const bodyParser = require('body-parser');
 const jwt = require('jsonwebtoken');
+const Keycloak = require('keycloak-connect');
 
 // custom imports
 const examples = require('./controllers/example-controller');
@@ -74,6 +75,15 @@ app.delete('/users/:id', (req, res)=> {
 
 
 app.get('/ping', function (req, res) {
+  res.send('pong!');
+});
+
+// keyclaok
+const keycloak = new Keycloak({ scope: 'offline_access' });
+
+app.use(keycloak.middleware( { logout: '/logoff' }));
+
+app.get('/ping2', keycloak.protect(), function (req, res) {
   res.send('pong!');
 });
 

@@ -1,0 +1,11 @@
+{
+  "realm": "master",
+  "auth-server-url": "http://localhost:8081/auth",
+  "bearer-only": true,
+  "ssl-required": "external",
+  "resource": "test",
+  "credentials": {
+    "secret": "3e252377-85e0-4da4-8c17-87d15f0f9091"
+  },
+ "realm-public-key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAjUdMYGiArWyuFBDaMlyIzS9/Yhxt0h0JIjj0OfVJ8jR4GHpMcAwpeGS/c80t8ncsQEZSctnd6LY0MujauRvRGhEMIZPdhgg+A6Gq8KRAkGx5gYXEI9oNch1jkpSyFXeaNQZFlIdOfNcrNlgjakGCHn0SrdYXB1WFGUUYi0FMV2+wYeDKrR7E15N0tuyOd2RVlieVqcxEtmtM1kLIy6vZU8ZeWiD5xOmK6g4vuqgamDAU1DhTVIe3eLLDQD0b6utkMQkfdevFYhcaTbibJK4keduZN3CJrZq9vuiqqQzoUNYRiJdkzVFhJjCd/u+UzwoUbJnhP9xFGrPK02sNutjJ+QIDAQAB"
+}
